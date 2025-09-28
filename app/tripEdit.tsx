@@ -22,6 +22,7 @@ import {
     updateTrip as updateTripInState,
     addTrip as addTripInState,
 } from "@/store/slices/tripsSlice";
+import { nanoid } from 'nanoid/non-secure';
 
 export default function TripEdit() {
     const router = useRouter();
@@ -49,6 +50,7 @@ export default function TripEdit() {
 
     // Editable state fields
     const [destination, setDestination] = useState(trip.destination);
+    const [state, setState] = useState(trip.state);
     const [from, setFrom] = useState(new Date(trip.from));
     const [till, setTill] = useState(new Date(trip.till));
     const [status, setStatus] = useState(trip.status);
@@ -78,7 +80,7 @@ export default function TripEdit() {
                 transportCost: transportCost ? parseFloat(transportCost) : 0,
                 notes: notes || "",
                 updated: new Date().toISOString(),
-                id: trip.id || undefined,
+                id: trip.id || nanoid(),
             };
 
             if (trip.id) {
@@ -88,13 +90,11 @@ export default function TripEdit() {
             } else {
                 try {
                     const newTrip = await createTrip(tripToSave);
-                    console.log('trip to save :', JSON.stringify(tripToSave));
                     console.log('Created trip:', newTrip);
+                    dispatch(addTripInState(newTrip));
                 } catch (err) {
                     console.error('Failed to create trip', err); // will show real cause
                 }
-                
-               // dispatch(addTripInState(newTrip));
             }
 
             Alert.alert("Trip saved!", "", [{ text: "OK", onPress: () => router.back() }]);
@@ -114,20 +114,20 @@ export default function TripEdit() {
                 <ScrollView contentContainerStyle={styles.container}>
                     <Stack.Screen options={{ title: tripId ? "Edit Trip" : "New Trip" }} />
 
-                    <Text style={styles.title}>
-                        {tripId ? `${destination || trip.destination}` : "Nieuwe trip"}
-                    </Text>
-
-                    {/* Destination */}
-                    <View style={styles.row}>
-                        <Text style={styles.label}>Bestemming (stad):</Text>
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Bestemming"
-                            value={destination}
-                            onChangeText={setDestination}
-                        />
-                    </View>
+                    {tripId ?
+                        <Text style={styles.title}>
+                            {`${destination || trip.destination}, ${trip.state || ''}`}
+                        </Text> :
+                        <View style={styles.row}>
+                            <Text style={styles.label}>Bestemming (stad):</Text>
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Bestemming"
+                                value={destination}
+                                onChangeText={setDestination}
+                            />
+                        </View>
+                    }
 
                     {/* From */}
                     <View style={styles.row}>

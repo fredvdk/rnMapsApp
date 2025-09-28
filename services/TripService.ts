@@ -1,19 +1,22 @@
 import { Trip } from "@/models/Trip";
 
-const url = "http://whitechapel.ddns.net:3000/api";
+const url = 'https://trips-map-fawn.vercel.app/api';
 
 export const fetchTrips = async () => {
-  const data = await fetch(`${url}/trips`, {
-    method: "GET"});
-  const json = await data.json();
-  console.log('Fetched trips from API');
-  const converted = json.map((trip: Trip) => ({// Convert latitude and longitude to numbers
-    ...trip,
-    latitude: parseFloat(trip.latitude),
-    longitude: parseFloat(trip.longitude),
-  }));
-  return converted;
+  try {
+    const res = await fetch(`${url}/trips`, { method: 'GET' });
+    if (!res.ok) {
+      throw new Error(`Request failed with status ${res.status}`);
+    }
+    const json = await res.json();
+    console.log('Fetched trips from API');
+    return json;
+  } catch (err) {
+    console.error('Error fetching trips:', err);
+    return null; // or throw err depending on your app
+  }
 };
+
 
 export const updateTrip = async (trip: Trip) => {
   const response = await fetch(`${url}/trips/`, {
