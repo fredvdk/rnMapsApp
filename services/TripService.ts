@@ -61,18 +61,20 @@ export const deleteTrip = async (tripId: string) => {
     console.error('Invalid trip ID:', tripId);
     return 'Invalid trip ID';
   }
-  const response = await fetch(`${url}/trips/${tripId}`, {
+  const response = await fetch(`${url}/trips/`, {
     method: "DELETE",
     headers: {
       "Content-Type": "application/json",
     },
+    body: JSON.stringify({id: tripId}),
   });
   if (!response.ok) {
     //throw new Error("Failed to delete trip");
     return 'Failed to delete trip';
   }
   else {
-    await fetchTrips(); // Refresh trips after deletion
+    console.log('Trip deleted successfully');
+    //await fetchTrips(); // Refresh trips after deletion
   }
   return await response.json();
 };

@@ -15,19 +15,21 @@ import { Text, View } from "@/components/Themed";
 import { Trip } from "@/models/Trip";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { Picker } from "@react-native-picker/picker";
-import { updateTrip, createTrip } from "@/services/TripService";
+import { updateTrip, createTrip, deleteTrip } from "@/services/TripService";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch } from "@/store";
 import {
     updateTrip as updateTripInState,
     addTrip as addTripInState,
+    deleteTrip as deleteTripInState
 } from "@/store/slices/tripsSlice";
 import { nanoid } from 'nanoid/non-secure';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function TripEdit() {
     const router = useRouter();
     const dispatch = useDispatch<AppDispatch>();
-    const { tripId } = useLocalSearchParams();
+    const { tripId }: { tripId: string} = useLocalSearchParams();
 
     // Find existing trip or create defaults
     const tripFromState: Trip | undefined = useSelector((state: any) =>
@@ -66,11 +68,29 @@ export default function TripEdit() {
     const [showFromPicker, setShowFromPicker] = useState(false);
     const [showTillPicker, setShowTillPicker] = useState(false);
 
-    const saveTrip = async () => {
+    const deleteClick = async () => {
+        Alert.alert(
+            "Confirm Deletion",
+            "Are you sure you want to delete this trip?",
+            [
+                { text: "Cancel", style: "cancel" },
+                { text: "Delete", style: "destructive", onPress: async () => {
+                    if (trip.id) {
+                        await deleteTrip(tripId);
+                        dispatch(deleteTripInState(tripId));
+                        router.push('/');
+                    }
+                } },
+            ]
+        );
+    };
+
+    const saveClick = async () => {
         try {
             const tripToSave: any = {
                 ...trip,
                 destination,
+                state: state || "",
                 from: from.toISOString() || new Date().toISOString(),
                 till: till.toISOString() || new Date().toISOString(),
                 status: status || "Scheduled",
@@ -104,6 +124,20 @@ export default function TripEdit() {
         }
     };
 
+    const US_STATES = [
+        "Alabama", "Alaska", "Arizona", "Arkansas", "California", "Colorado",
+        "Connecticut", "Delaware", "Florida", "Georgia", "Hawaii", "Idaho",
+        "Illinois", "Indiana", "Iowa", "Kansas", "Kentucky", "Louisiana",
+        "Maine", "Maryland", "Massachusetts", "Michigan", "Minnesota",
+        "Mississippi", "Missouri", "Montana", "Nebraska", "Nevada",
+        "New Hampshire", "New Jersey", "New Mexico", "New York",
+        "North Carolina", "North Dakota", "Ohio", "Oklahoma", "Oregon",
+        "Pennsylvania", "Rhode Island", "South Carolina", "South Dakota",
+        "Tennessee", "Texas", "Utah", "Vermont", "Virginia", "Washington",
+        "West Virginia", "Wisconsin", "Wyoming"
+    ];
+
+
     return (
         <KeyboardAvoidingView
             style={{ flex: 1, paddingBottom: 50 }}
@@ -118,15 +152,29 @@ export default function TripEdit() {
                         <Text style={styles.title}>
                             {`${destination || trip.destination}, ${trip.state || ''}`}
                         </Text> :
-                        <View style={styles.row}>
-                            <Text style={styles.label}>Bestemming (stad):</Text>
-                            <TextInput
-                                style={styles.input}
-                                placeholder="Bestemming"
-                                value={destination}
-                                onChangeText={setDestination}
-                            />
-                        </View>
+                        <>
+                            <View style={styles.row}>
+                                <Text style={styles.label}>Bestemming (stad):</Text>
+                                <TextInput
+                                    style={styles.input}
+                                    placeholder="Bestemming"
+                                    value={destination}
+                                    onChangeText={setDestination}
+                                />
+                            </View>
+                            <View style={styles.pickerWrapper}>
+                                <Picker
+                                    selectedValue={state}
+                                    onValueChange={(itemValue) => setState(itemValue)}
+                                    style={styles.picker}
+                                >
+                                    <Picker.Item label="Selecteer een staat" value="" />
+                                    {US_STATES.map((stateName) => (
+                                        <Picker.Item key={stateName} label={stateName} value={stateName} />
+                                    ))}
+                                </Picker>
+                            </View>
+                        </>
                     }
 
                     {/* From */}
@@ -242,9 +290,16 @@ export default function TripEdit() {
                         />
                     </View>
 
-                    <Pressable style={styles.saveButton} onPress={saveTrip}>
-                        <Text style={styles.saveButtonText}>💾 Opslaan</Text>
+                    <Pressable style={styles.Button} onPress={saveClick}>
+                        <Ionicons name="save-outline" size={18} color="#fff" />
+                        <Text style={styles.ButtonText}>Opslaan</Text>
                     </Pressable>
+
+                    <Pressable style={[styles.Button, styles.DeleteButton]} onPress={deleteClick}>
+                        <Ionicons name="trash-outline" size={18} color="#fff" />
+                        <Text style={styles.ButtonText}>Verwijderen</Text>
+                    </Pressable>
+
                 </ScrollView>
             </TouchableWithoutFeedback>
         </KeyboardAvoidingView>
@@ -277,14 +332,17 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         fontSize: 16,
     },
-    saveButton: {
+    Button: {
         marginTop: 20,
         padding: 15,
         backgroundColor: "#007AFF",
         borderRadius: 8,
         alignItems: "center",
     },
-    saveButtonText: {
+    DeleteButton: {
+        backgroundColor: "red",
+    },
+    ButtonText: {
         color: "#fff",
         fontSize: 18,
     },
@@ -296,7 +354,7 @@ const styles = StyleSheet.create({
         overflow: "hidden",
     },
     picker: {
-        height: 64,
+        height: 50,
         width: "100%",
     },
 });

@@ -47,6 +47,7 @@ export const tripsSlice = createSlice({
     deleteTrip: (state, action) => {
       state.trips = state.trips.filter((trip) => trip.id !== action.payload);
     },
+    
     setSelectedTrip: (state, action: PayloadAction<string>) => {
       state.selectedTripId = action.payload;
       console.log('Selected trip set to:', state.selectedTripId);
